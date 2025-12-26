@@ -11,7 +11,7 @@ class ApiClient {
 
   ApiClient(this._ref)
       : _dio = Dio(BaseOptions(
-          baseUrl: 'http://127.0.0.1:8000/api/v1/',
+          baseUrl: 'http://127.0.0.1:8000/api/v1/', // Base URL with /api/v1/
           connectTimeout: const Duration(seconds: 10),
           receiveTimeout: const Duration(seconds: 10),
           contentType: 'application/json',
@@ -31,6 +31,7 @@ class ApiClient {
           options.headers['X-Tenant-ID'] = tenantSchema;
         }
         
+        print('Request URL: ${options.baseUrl}${options.path}');
         return handler.next(options);
       },
     ));
@@ -42,14 +43,19 @@ class ApiClient {
   void _initBaseUrl() async {
     final url = await _storage.read(key: 'tenant_url');
     if (url != null) {
-      _dio.options.baseUrl = url;
-      print('ApiClient: Restored Base URL to $url');
+      // Ensure URL ends with / but doesn't include /api/v1/
+      String baseUrl = url.endsWith('/') ? url : '$url/';
+      _dio.options.baseUrl = baseUrl;
+      print('ApiClient: Restored Base URL to $baseUrl');
     }
   }
 
   void setBaseUrl(String url) {
-    _dio.options.baseUrl = url;
-    print('ApiClient: Updated Base URL to $url');
+    // Ensure URL ends with / but doesn't include /api/v1/
+    String baseUrl = url.endsWith('/') ? url : '$url/';
+    _dio.options.baseUrl = baseUrl;
+    _storage.write(key: 'tenant_url', value: baseUrl);
+    print('ApiClient: Updated Base URL to $baseUrl');
   }
 
   Dio get client => _dio;

@@ -17,7 +17,7 @@ class StudentRepository {
   Future<List<Student>> getStudents() async {
     final dio = _ref.read(apiClientProvider).client;
     try {
-      final response = await dio.get('students/students/');
+      final response = await dio.get('students/');
       // Assuming standard DRF paginated response or list
       // For now handling direct list or "results" key
       final data = response.data;

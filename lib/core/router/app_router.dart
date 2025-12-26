@@ -10,7 +10,7 @@ import '../../features/students/domain/student.dart';
 import '../../features/academics/presentation/academics_screen.dart';
 import '../../features/hr/presentation/staff_list_screen.dart';
 import '../../features/finance/presentation/fee_list_screen.dart';
-import '../../features/attendance/presentation/attendance_screen.dart';
+import '../../features/attendance/presentation/screens/attendance_dashboard_screen.dart';
 import '../../features/transport/presentation/transport_screen.dart';
 import '../../features/hostel/presentation/hostel_screen.dart';
 
@@ -64,7 +64,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/attendance',
-        builder: (context, state) => const AttendanceScreen(),
+        builder: (context, state) => const AttendanceDashboardScreen(),
       ),
       GoRoute(
         path: '/transport',
