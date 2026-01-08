@@ -768,16 +768,18 @@ class _StudentWrapperFormScreenState extends ConsumerState<StudentWrapperFormScr
             const SnackBar(content: Text('✓ Student updated successfully'), backgroundColor: Colors.green)
           );
           Navigator.pop(context);
-          ref.invalidate(studentListProvider);
+          ref.invalidate(studentPaginationProvider); // Refresh the list
         }
       } else {
         final studentId = await ref.read(studentRepositoryProvider).createStudent(data);
+        // Refresh the list
+        ref.invalidate(studentPaginationProvider);
+
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('✓ Student created successfully'), backgroundColor: Colors.green)
-          );
-          ref.invalidate(studentListProvider);
-          Navigator.pop(context);
+           ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('✓ Student created successfully'), backgroundColor: Colors.green)
+        );
+        Navigator.pop(context);
         }
       }
     } catch (e) {
@@ -812,14 +814,18 @@ class _StudentWrapperFormScreenState extends ConsumerState<StudentWrapperFormScr
             errorMessage = 'Error: $errStr';
           }
         }
+        // Refresh the list
+        ref.invalidate(studentPaginationProvider);
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMessage),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

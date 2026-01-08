@@ -138,6 +138,129 @@ class ExportService {
   }
 
 
+  // Generate and Print Student Profile PDF
+  static Future<void> exportProfileToPdf(BuildContext context, dynamic student) async {
+    // Note: student is dynamic to avoid direct dependency, or import Student model
+    final pdf = pw.Document();
+    final theme = pw.ThemeData.withFont(
+      base: await PdfGoogleFonts.openSansRegular(),
+      bold: await PdfGoogleFonts.openSansBold(),
+      icons: await PdfGoogleFonts.materialIcons(),
+    );
+     const baseColor = PdfColor.fromInt(0xFF2196F3);
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageTheme: pw.PageTheme(
+          theme: theme,
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(40),
+        ),
+         header: (context) => _buildHeader(context, 'Student Profile', baseColor),
+         footer: (context) => _buildFooter(context, baseColor),
+        build: (pw.Context context) {
+          return [
+             pw.Container(
+               padding: const pw.EdgeInsets.all(20),
+               decoration: pw.BoxDecoration(
+                 color: PdfColors.grey50,
+                 border: pw.Border.all(color: PdfColors.grey200),
+                 borderRadius: pw.BorderRadius.circular(10),
+               ),
+               child: pw.Row(
+                 crossAxisAlignment: pw.CrossAxisAlignment.start,
+                 children: [
+                    pw.Container(
+                      width: 80,
+                      height: 80,
+                      decoration: const pw.BoxDecoration(
+                        color: PdfColors.grey300,
+                        shape: pw.BoxShape.circle,
+                      ),
+                      child: pw.Center(
+                        child: pw.Text(
+                           (student.firstName as String).isNotEmpty ? (student.firstName as String)[0] : '?',
+                           style: pw.TextStyle(fontSize: 40, color: PdfColors.white, fontWeight: pw.FontWeight.bold),
+                        )
+                      )
+                    ),
+                    pw.SizedBox(width: 20),
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text('${student.firstName} ${student.lastName}', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold, color: baseColor)),
+                          pw.SizedBox(height: 5),
+                          pw.Text('Admission #: ${student.admissionNumber ?? "N/A"}', style: const pw.TextStyle(color: PdfColors.grey700)),
+                          pw.Text('Class: ${student.currentClassName ?? "N/A"}', style: const pw.TextStyle(color: PdfColors.grey700)),
+                          pw.Text('Email: ${student.email ?? "N/A"}', style: const pw.TextStyle(color: PdfColors.grey700)),
+                        ],
+                      )
+                    )
+                 ]
+               )
+             ),
+             pw.SizedBox(height: 20),
+             
+             // Sections
+             _buildPdfSection('Personal Information', [
+               ['Gender', student.gender ?? '-'],
+               ['Date of Birth', student.dateOfBirth ?? '-'],
+               ['Mobile', student.mobilePrimary ?? '-'],
+               ['Nationality', student.nationality ?? '-'],
+             ]),
+             
+             _buildPdfSection('Parent / Guardian', [
+                // Simplified, assumes first guardian if exists
+                if (student.guardians != null && (student.guardians as List).isNotEmpty) ...[
+                   ['Guardian Name', student.guardians[0].firstName],
+                   ['Relationship', student.guardians[0].relationship],
+                   ['Mobile', student.guardians[0].mobileNumber],
+                ] else ...[
+                   ['Status', 'No guardian linked']
+                ]
+             ]),
+            
+             _buildPdfSection('Academic Details', [
+               ['Roll Number', student.rollNumber ?? '-'],
+               ['Academic Year', student.academicYear ?? '-'],
+               ['Status', student.status ?? '-'],
+             ]),
+
+          ];
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => pdf.save(),
+      name: '${student.firstName}_profile.pdf',
+    );
+  }
+
+  static pw.Widget _buildPdfSection(String title, List<List<String>> rows) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text(title, style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.black)),
+        pw.Divider(color: PdfColors.grey400),
+        pw.SizedBox(height: 10),
+         pw.TableHelper.fromTextArray(
+            data: rows,
+            headerCount: 0,
+            border: null,
+            cellAlignment: pw.Alignment.centerLeft,
+            cellStyle: const pw.TextStyle(fontSize: 10),
+            cellPadding: const pw.EdgeInsets.symmetric(vertical: 4),
+            rowDecoration: const pw.BoxDecoration(
+               border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey100, width: 0.5)),
+            ),
+         ),
+         pw.SizedBox(height: 20),
+      ]
+    );
+  }
+
   static Future<void> exportToCsv(BuildContext context, String filename, List<String> headers, List<List<dynamic>> data) async {
     List<List<dynamic>> rows = [headers, ...data];
     String csv = const ListToCsvConverter().convert(rows);

@@ -7,12 +7,42 @@ import '../../../../core/network/api_client.dart';
 import '../domain/student.dart';
 import '../domain/onboarding_status.dart';
 import '../domain/student_document.dart';
+import '../../../shared/models/paginated_response.dart';
 
 final studentRepositoryProvider = Provider((ref) => StudentRepository(ref));
 
 final studentListProvider = FutureProvider.autoDispose<List<Student>>((ref) async {
   return ref.watch(studentRepositoryProvider).getStudents();
 });
+
+// Keep existing provider for backward compatibility or simple lists, but define a new one for pagination
+final studentPaginationProvider = FutureProvider.family.autoDispose<PaginatedResponse<Student>, StudentPaginationParams>((ref, params) async {
+  return ref.watch(studentRepositoryProvider).getStudentsPaginated(
+    page: params.page,
+    pageSize: params.pageSize,
+    search: params.search,
+  );
+});
+
+class StudentPaginationParams {
+  final int page;
+  final int pageSize;
+  final String? search;
+
+  const StudentPaginationParams({this.page = 1, this.pageSize = 10, this.search});
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is StudentPaginationParams &&
+          runtimeType == other.runtimeType &&
+          page == other.page &&
+          pageSize == other.pageSize &&
+          search == other.search;
+
+  @override
+  int get hashCode => page.hashCode ^ pageSize.hashCode ^ search.hashCode;
+}
 
 class StudentRepository {
   final Ref _ref;
@@ -23,26 +53,45 @@ class StudentRepository {
     final dio = _ref.read(apiClientProvider).client;
     try {
       final response = await dio.get('students/');
-      // Assuming standard DRF paginated response or list
-      // For now handling direct list or "results" key
-      final data = response.data;
-      if (data is Map && data.containsKey('results')) {
-        final List<Student> students = [];
-        for (var item in (data['results'] as List)) {
-          try {
-            students.add(Student.fromJson(item));
-          } catch (e) {
-            print('Error parsing student: $e');
-          }
-        }
-        return students;
-      } else if (data is List) {
-        return data.map((e) => Student.fromJson(e)).toList();
-      }
-      return [];
+      return _parseStudentList(response.data);
     } catch (e) {
       rethrow;
     }
+  }
+
+  Future<PaginatedResponse<Student>> getStudentsPaginated({int page = 1, int pageSize = 10, String? search}) async {
+    final dio = _ref.read(apiClientProvider).client;
+    try {
+      final Map<String, dynamic> queryParams = {
+        'page': page,
+        'page_size': pageSize,
+      };
+      if (search != null && search.isNotEmpty) {
+        queryParams['search'] = search;
+      }
+      
+      final response = await dio.get('students/', queryParameters: queryParams);
+      return PaginatedResponse<Student>.fromJson(response.data, (json) => Student.fromJson(json));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  List<Student> _parseStudentList(dynamic data) {
+    if (data is Map && data.containsKey('results')) {
+      final List<Student> students = [];
+      for (var item in (data['results'] as List)) {
+        try {
+          students.add(Student.fromJson(item));
+        } catch (e) {
+          print('Error parsing student: $e');
+        }
+      }
+      return students;
+    } else if (data is List) {
+      return data.map((e) => Student.fromJson(e)).toList();
+    }
+    return [];
   }
   Future<String> createStudent(Map<String, dynamic> data) async {
     final dio = _ref.read(apiClientProvider).client;

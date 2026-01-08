@@ -61,6 +61,8 @@ class Student {
   final String? academicYear;
   @JsonKey(name: 'current_class')
   final String? currentClass;
+  @JsonKey(name: 'current_class_name')
+  final String? currentClassName;
   final String? stream;
   final String? section;
   @JsonKey(name: 'admission_type')
@@ -126,6 +128,7 @@ class Student {
     this.annualFamilyIncome,
     this.academicYear,
     this.currentClass,
+    this.currentClassName,
     this.stream,
     this.section,
     this.admissionType,

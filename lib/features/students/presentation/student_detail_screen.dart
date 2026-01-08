@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import 'package:intl/intl.dart';
 import '../domain/student.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/services/export_service.dart';
 import 'student_medical_form_screen.dart';
 import 'student_identification_form_screen.dart';
 import 'student_wrapper_form_screen.dart';
@@ -248,21 +249,20 @@ class _StudentDetailScreenState extends ConsumerState<StudentDetailScreen> with 
   }
 
   Future<void> _generateAndPrintPdf(BuildContext context, Student student) async {
-      // (Keeping implementation roughly same but could be improved later)
-      // For brevity in replacement, re-using previous logic logic or simplifying
-      final pdf = pw.Document();
-      pdf.addPage(
-        pw.Page(
-          pageFormat: PdfPageFormat.a4,
-          build: (pw.Context context) {
-             return pw.Center(child: pw.Text("Profile for ${student.firstName}")); // Simplified for this view update
-          }
-        )
-      );
-       await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => pdf.save(),
-        name: '${student.admissionNumber}_profile.pdf',
-      );
+    try {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Generating PDF...')),
+        );
+      }
+      await ExportService.exportProfileToPdf(context, student);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error generating PDF: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   Widget _buildOnboardingProgressCard() {
