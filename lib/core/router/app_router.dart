@@ -32,6 +32,8 @@ import '../../features/assignments/presentation/assignments_dashboard_screen.dar
 import '../../features/students/presentation/student_dashboard_screen.dart';
 import '../../features/hostel/presentation/hostel_screen.dart';
 import '../../features/hostel/presentation/hostel_dashboard_screen.dart';
+import '../../features/admission/presentation/admission_dashboard_screen.dart';
+import '../../features/admission/presentation/admission_list_screen.dart';
 
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -180,7 +182,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/admission',
-        builder: (context, state) => const PlaceholderScreen(title: 'Admission'),
+        builder: (context, state) => const AdmissionDashboardScreen(),
+        routes: [
+           GoRoute(
+            path: 'list',
+            builder: (context, state) => const AdmissionListScreen(),
+          ),
+        ],
       ),
       GoRoute(
         path: '/analytics',
