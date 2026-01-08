@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/config/constants.dart';
 import 'auth_controller.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -113,7 +115,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                   const SizedBox(height: 16),
                   TextButton(
-                    onPressed: () => context.go('/tenant'),
+                    onPressed: () async {
+                      const storage = FlutterSecureStorage();
+                      await storage.delete(key: AppConstants.tenantUrlKey);
+                      await storage.delete(key: AppConstants.tenantSchemaKey);
+                      if (context.mounted) context.go('/tenant');
+                    },
                     child: const Text('Change Institution'),
                   ),
                 ],

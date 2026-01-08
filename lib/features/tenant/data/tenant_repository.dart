@@ -11,7 +11,7 @@ class TenantRepository {
 
   TenantRepository(this._ref)
       : _publicDio = Dio(BaseOptions(
-          baseUrl: 'http://127.0.0.1:8000/', // Public root URL
+          baseUrl: 'https://mtsm.codefyn.com/', // Public root URL
           connectTimeout: const Duration(seconds: 10),
         ));
 

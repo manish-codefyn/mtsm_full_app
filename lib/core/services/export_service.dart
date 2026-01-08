@@ -4,12 +4,10 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:csv/csv.dart';
 import 'package:flutter/material.dart';
-import 'dart:convert';
-// import 'package:universal_html/html.dart' as html; // For web download if needed, keeping simple for now
 
 class ExportService {
   
-  // Generate and Preview/Print PDF
+  // Generate and Preview/Print Modern PDF
   static Future<void> exportToPdf(
     BuildContext context, 
     String title, 
@@ -17,24 +15,57 @@ class ExportService {
     List<List<dynamic>> data
   ) async {
     final pdf = pw.Document();
+    final theme = pw.ThemeData.withFont(
+      base: await PdfGoogleFonts.openSansRegular(),
+      bold: await PdfGoogleFonts.openSansBold(),
+      icons: await PdfGoogleFonts.materialIcons(),
+    );
+
+    // Primary Color (using a nice blue)
+    const baseColor = PdfColor.fromInt(0xFF2196F3);
 
     pdf.addPage(
       pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
+        pageTheme: pw.PageTheme(
+          theme: theme,
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(40),
+          buildBackground: (context) => pw.FullPage(
+            ignoreMargins: true,
+            child: pw.Container(
+              decoration: pw.BoxDecoration(
+                 border: pw.Border.all(color: PdfColors.grey200, width: 10),
+              ),
+            ),
+          ),
+        ),
+        header: (context) => _buildHeader(context, title, baseColor),
+        footer: (context) => _buildFooter(context, baseColor),
         build: (pw.Context context) {
           return [
-            pw.Header(
-              level: 0,
-              child: pw.Text(title, style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
-            ),
-            pw.SizedBox(height: 20),
-            pw.Table.fromTextArray(
-              headers: headers,
-              data: data,
-              border: pw.TableBorder.all(),
-              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-              cellAlignment: pw.Alignment.centerLeft,
-            ),
+             pw.SizedBox(height: 20),
+             pw.TableHelper.fromTextArray(
+                headers: headers,
+                data: data,
+                border: null,
+                headerStyle: pw.TextStyle(
+                  color: PdfColors.white,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+                headerDecoration: const pw.BoxDecoration(
+                  color: baseColor,
+                ),
+                rowDecoration: const pw.BoxDecoration(
+                  border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey100, width: 0.5)),
+                ),
+                cellAlignment: pw.Alignment.centerLeft,
+                cellAlignments: {
+                  0: pw.Alignment.centerLeft,
+                },
+                cellStyle: const pw.TextStyle(fontSize: 10),
+                cellPadding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                oddRowDecoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xFFF5F5F5)),
+             ),
           ];
         },
       ),
@@ -46,21 +77,71 @@ class ExportService {
     );
   }
 
-  // Generate CSV (Printing package doesn't handle CSV, so we usually share it or save it)
-  // For Web/Desktop/Mobile, saving files varies. 
-  // For this generic implementation, we'll try to use the share dialog or simple print for now
-  // as saving to file system permissions can be tricky cross-platform without more setup.
-  // Actually, for a dashboard, "Export to CSV" usually means download.
+  static pw.Widget _buildHeader(pw.Context context, String title, PdfColor baseColor) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          children: [
+            pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text('DPS Kolkata', style: pw.TextStyle(color: baseColor, fontSize: 18, fontWeight: pw.FontWeight.bold)),
+                pw.Text('School Management System', style: const pw.TextStyle(color: PdfColors.grey600, fontSize: 10)),
+              ],
+            ),
+            pw.Column(
+               crossAxisAlignment: pw.CrossAxisAlignment.end,
+               children: [
+                 pw.Text('Report', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold, color: PdfColors.black)),
+                 pw.Text(
+                   title,
+                   style: const pw.TextStyle(fontSize: 14, color: PdfColors.grey700),
+                 ),
+               ]
+            )
+          ],
+        ),
+        pw.SizedBox(height: 10),
+        pw.Divider(color: baseColor, thickness: 2),
+        pw.SizedBox(height: 10),
+        pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          children: [
+            pw.Text('Generated On: ${DateTime.now().toString().split('.')[0]}', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
+            pw.Text('Academic Year: 2024-2025', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
+          ]
+        ),
+        pw.SizedBox(height: 20),
+      ],
+    );
+  }
+
+  static pw.Widget _buildFooter(pw.Context context, PdfColor baseColor) {
+    return pw.Column(
+      children: [
+        pw.Divider(color: PdfColors.grey300),
+        pw.SizedBox(height: 10),
+        pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          children: [
+             pw.Text('Generated by Admin', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey500)),
+             pw.Text(
+              'Page ${context.pageNumber} of ${context.pagesCount}',
+              style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey500),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+
   static Future<void> exportToCsv(BuildContext context, String filename, List<String> headers, List<List<dynamic>> data) async {
-    // Basic CSV generation
     List<List<dynamic>> rows = [headers, ...data];
     String csv = const ListToCsvConverter().convert(rows);
-    
-    // For simplicity in this demo, we can show specific instructions or use a basic share
-    // Implementing full file download for all platforms is complex.
-    // We will simulate success for now or log it.
-    print("CSV Generatd:\n$csv");
-    
+    print("CSV Generated:\n$csv");
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('CSV Export Simulated (Check Console)')),
     );

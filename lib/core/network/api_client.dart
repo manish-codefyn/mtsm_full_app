@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../config/constants.dart';
 
 final apiClientProvider = Provider((ref) => ApiClient(ref));
 
@@ -11,7 +12,7 @@ class ApiClient {
 
   ApiClient(this._ref)
       : _dio = Dio(BaseOptions(
-          baseUrl: 'http://127.0.0.1:8000/api/v1/', // Base URL with /api/v1/
+          baseUrl: AppConstants.defaultBaseUrl,
           connectTimeout: const Duration(seconds: 10),
           receiveTimeout: const Duration(seconds: 10),
           contentType: 'application/json',
@@ -19,15 +20,14 @@ class ApiClient {
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
         // Add auth token if available
-        final token = await _storage.read(key: 'access_token');
+        final token = await _storage.read(key: AppConstants.tokenKey);
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
         }
         
         // Add X-Tenant-ID header for tenant selection (Strategy 3)
-        final tenantSchema = await _storage.read(key: 'tenant_schema');
+        final tenantSchema = await _storage.read(key: AppConstants.tenantSchemaKey);
         if (tenantSchema != null) {
-          print('Adding X-Tenant-ID header: $tenantSchema');
           options.headers['X-Tenant-ID'] = tenantSchema;
         }
         
@@ -41,7 +41,7 @@ class ApiClient {
   }
 
   void _initBaseUrl() async {
-    final url = await _storage.read(key: 'tenant_url');
+    final url = await _storage.read(key: AppConstants.tenantUrlKey);
     if (url != null) {
       // Ensure URL ends with / but doesn't include /api/v1/
       String baseUrl = url.endsWith('/') ? url : '$url/';
@@ -54,7 +54,7 @@ class ApiClient {
     // Ensure URL ends with / but doesn't include /api/v1/
     String baseUrl = url.endsWith('/') ? url : '$url/';
     _dio.options.baseUrl = baseUrl;
-    _storage.write(key: 'tenant_url', value: baseUrl);
+    _storage.write(key: AppConstants.tenantUrlKey, value: baseUrl);
     print('ApiClient: Updated Base URL to $baseUrl');
   }
 

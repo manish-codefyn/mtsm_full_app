@@ -9,7 +9,7 @@ import '../../../shared/widgets/app_data_table.dart';
 import '../../../core/services/export_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:printing/printing.dart';
-import 'student_form_screen.dart';
+import 'student_wrapper_form_screen.dart';
 
 
 
@@ -138,7 +138,7 @@ class StudentListScreen extends ConsumerWidget {
                          IconButton(
                            icon: const Icon(Icons.edit, color: Colors.blue),
                            onPressed: () {
-                             Navigator.push(context, MaterialPageRoute(builder: (_) => StudentFormScreen(student: student)));
+                             Navigator.push(context, MaterialPageRoute(builder: (_) => StudentWrapperFormScreen(student: student)));
                            },
                            tooltip: 'Edit',
                          ),

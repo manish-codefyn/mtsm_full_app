@@ -12,15 +12,22 @@ class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
+  @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
-    final themeMode = ref.watch(themeControllerProvider);
+    final themeState = ref.watch(themeControllerProvider);
 
     return MaterialApp.router(
-      title: 'School ERP',
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: themeMode,
+      title: 'MTSM',
+      theme: AppTheme.getLightTheme(
+        primary: themeState.primary ?? AppTheme.primaryBlue,
+        secondary: themeState.secondary ?? AppTheme.accentBlue,
+      ),
+      darkTheme: AppTheme.getDarkTheme(
+        primary: themeState.primary ?? AppTheme.primaryBlue,
+        secondary: themeState.secondary ?? AppTheme.accentBlue,
+      ),
+      themeMode: themeState.mode,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
     );

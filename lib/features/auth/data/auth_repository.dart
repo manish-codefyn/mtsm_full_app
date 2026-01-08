@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/config/constants.dart';
 
 final authRepositoryProvider = Provider((ref) => AuthRepository(ref));
 
@@ -14,9 +15,9 @@ class AuthRepository {
   Future<Map<String, dynamic>> login(String email, String password) async {
     final dio = _ref.read(apiClientProvider).client;
     try {
-      final tenantSchema = await _storage.read(key: 'tenant_schema');
+      final tenantSchema = await _storage.read(key: AppConstants.tenantSchemaKey);
       print('Attempting login with schema: $tenantSchema');
-      final response = await dio.post('auth/api-login/', data: {
+      final response = await dio.post('auth/login/', data: {
         'email': email,
         'password': password,
         'tenant_schema': tenantSchema, 
@@ -24,8 +25,8 @@ class AuthRepository {
 
       final data = response.data;
       final tokens = data['tokens'];
-      await _storage.write(key: 'access_token', value: tokens['access']);
-      await _storage.write(key: 'refresh_token', value: tokens['refresh']);
+      await _storage.write(key: AppConstants.tokenKey, value: tokens['access']);
+      await _storage.write(key: AppConstants.refreshTokenKey, value: tokens['refresh']);
       
       return data['user'];
     } on DioException catch (e) {
@@ -38,13 +39,27 @@ class AuthRepository {
     }
   }
 
+  Future<Map<String, dynamic>> checkTenant(String schema) async {
+    // Use a fresh Dio instance to avoid stale base URL from ApiClient
+    final dio = Dio(BaseOptions(
+      baseUrl: AppConstants.defaultBaseUrl,
+      connectTimeout: const Duration(seconds: 10),
+    ));
+    try {
+      final response = await dio.get('public/lookup/', queryParameters: {'schema': schema});
+      return response.data;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<void> logout() async {
     final dio = _ref.read(apiClientProvider).client;
     try {
-      await dio.post('auth/api-logout/');
+      await dio.post('auth/logout/');
     } catch (_) {}
-    await _storage.delete(key: 'access_token');
-    await _storage.delete(key: 'refresh_token');
+    await _storage.delete(key: AppConstants.tokenKey);
+    await _storage.delete(key: AppConstants.refreshTokenKey);
   }
 
   Future<String?> getToken() async {

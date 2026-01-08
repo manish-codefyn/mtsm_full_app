@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../data/tenant_repository.dart';
-import 'package:school_erp_app/core/network/api_client.dart';
+import 'package:eduerp_app/core/network/api_client.dart';
 
 final tenantControllerProvider = AsyncNotifierProvider<TenantController, String?>(TenantController.new);
 
