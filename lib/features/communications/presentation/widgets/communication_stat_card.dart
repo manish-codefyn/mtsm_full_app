@@ -19,7 +19,7 @@ class CommunicationStatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        height: 100, // Fixed height for uniformity
+        height: 120, // Increased height to prevent overflow
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),

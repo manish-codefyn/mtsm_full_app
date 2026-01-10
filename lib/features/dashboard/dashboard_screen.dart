@@ -38,7 +38,7 @@ class DashboardScreen extends ConsumerWidget {
                ),
                child: Row(
                  children: [
-                   Image.asset('assets/images/app_logo.png', height: 30, errorBuilder: (_,__,___) => const Icon(Icons.school, color: AppTheme.primaryBlue, size: 30)),
+                   const Icon(Icons.school, color: AppTheme.primaryBlue, size: 30),
                    const SizedBox(width: 10),
                    Expanded(
                      child: Text(

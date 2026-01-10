@@ -34,6 +34,33 @@ import '../../features/hostel/presentation/hostel_screen.dart';
 import '../../features/hostel/presentation/hostel_dashboard_screen.dart';
 import '../../features/admission/presentation/admission_dashboard_screen.dart';
 import '../../features/admission/presentation/admission_list_screen.dart';
+import '../../features/academics/presentation/class_list_screen.dart';
+import '../../features/academics/presentation/section_list_screen.dart';
+import '../../features/academics/presentation/subject_list_screen.dart';
+import '../../features/academics/presentation/academic_year_list_screen.dart';
+import '../../features/academics/presentation/academic_year_form_screen.dart';
+import '../../features/academics/presentation/term_list_screen.dart';
+import '../../features/academics/presentation/term_form_screen.dart';
+import '../../features/academics/presentation/stream_list_screen.dart';
+import '../../features/academics/presentation/stream_form_screen.dart';
+import '../../features/academics/presentation/class_subject_list_screen.dart';
+import '../../features/academics/presentation/class_subject_form_screen.dart';
+import '../../features/academics/presentation/class_subject_form_screen.dart';
+import '../../features/academics/presentation/class_form_screen.dart';
+import '../../features/academics/presentation/section_form_screen.dart';
+import '../../features/academics/presentation/holiday_form_screen.dart';
+import '../../features/academics/presentation/timetable_screen.dart';
+import '../../features/academics/presentation/subject_form_screen.dart';
+import '../../features/academics/presentation/holiday_list_screen.dart';
+import '../../features/academics/presentation/house_list_screen.dart';
+import '../../features/academics/presentation/house_form_screen.dart';
+import '../../features/academics/presentation/grading_system_list_screen.dart';
+import '../../features/academics/presentation/grading_system_form_screen.dart';
+import '../../features/academics/presentation/grade_list_screen.dart';
+import '../../features/academics/presentation/syllabus_list_screen.dart';
+import '../../features/academics/presentation/syllabus_form_screen.dart';
+import '../../features/academics/presentation/study_material_list_screen.dart';
+import '../../features/academics/presentation/study_material_form_screen.dart';
 
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -104,10 +131,209 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/academics',
         builder: (context, state) => const AcademicsDashboardScreen(),
         routes: [
-           GoRoute(path: 'classes', builder: (context, state) => const Scaffold(body: Center(child: Text('Classes List Coming Recently')))),
-           GoRoute(path: 'sections', builder: (context, state) => const Scaffold(body: Center(child: Text('Sections List Coming Recently')))),
-           GoRoute(path: 'subjects', builder: (context, state) => const Scaffold(body: Center(child: Text('Subjects List Coming Recently')))),
-           GoRoute(path: 'timetable', builder: (context, state) => const Scaffold(body: Center(child: Text('Timetable Coming Recently')))),
+           // Core Setup
+           GoRoute(
+             path: 'academic-years',
+             builder: (context, state) => const AcademicYearListScreen(),
+             routes: [
+                GoRoute(
+                  path: 'create',
+                  builder: (context, state) => const AcademicYearFormScreen(),
+                ),
+                GoRoute(
+                  path: ':id/edit',
+                  builder: (context, state) {
+                    final id = state.pathParameters['id']!;
+                    return AcademicYearFormScreen(id: id);
+                  },
+                ),
+             ],
+           ),
+           // Terms
+           GoRoute(
+             path: 'terms',
+             builder: (context, state) => const TermListScreen(),
+             routes: [
+                GoRoute(
+                  path: 'create',
+                  builder: (context, state) => const TermFormScreen(),
+                ),
+                GoRoute(
+                  path: ':id/edit',
+                  builder: (context, state) {
+                    final id = state.pathParameters['id']!;
+                    return TermFormScreen(id: id);
+                  },
+                ),
+             ],
+           ),
+           // Streams
+           GoRoute(
+             path: 'streams',
+             builder: (context, state) => const StreamListScreen(),
+             routes: [
+                GoRoute(
+                  path: 'create',
+                  builder: (context, state) => const StreamFormScreen(),
+                ),
+                GoRoute(
+                  path: ':id/edit',
+                  builder: (context, state) {
+                    final id = state.pathParameters['id']!;
+                    return StreamFormScreen(id: id);
+                  },
+                ),
+             ],
+           ),
+           
+           // Class Management
+           GoRoute(
+            path: 'classes',
+            builder: (context, state) => const ClassListScreen(),
+            routes: [
+               GoRoute(
+                 path: 'create',
+                 builder: (context, state) => const ClassFormScreen(),
+               ),
+               GoRoute(
+                 path: ':id/edit',
+                 builder: (context, state) {
+                   final id = state.pathParameters['id']!;
+                   return ClassFormScreen(id: id);
+                 },
+               ),
+            ],
+          ),
+           GoRoute(
+            path: 'sections',
+            builder: (context, state) => const SectionListScreen(),
+            routes: [
+               GoRoute(
+                 path: 'create',
+                 builder: (context, state) => const SectionFormScreen(),
+               ),
+               GoRoute(
+                 path: ':id/edit',
+                 builder: (context, state) {
+                   final id = state.pathParameters['id']!;
+                   return SectionFormScreen(id: id);
+                 },
+               ),
+            ],
+           ),
+           // Subjects
+           GoRoute(
+             path: 'subjects',
+             builder: (context, state) => const SubjectListScreen(),
+             routes: [
+                GoRoute(
+                  path: 'create',
+                  builder: (context, state) => const SubjectFormScreen(),
+                ),
+                GoRoute(
+                  path: ':id/edit',
+                  builder: (context, state) {
+                    final id = state.pathParameters['id']!;
+                    return SubjectFormScreen(id: id);
+                  },
+                ),
+             ],
+           ),
+            // Class Subjects
+            GoRoute(
+              path: 'class-subjects',
+              builder: (context, state) => const ClassSubjectListScreen(),
+              routes: [
+                GoRoute(
+                  path: 'create',
+                  builder: (context, state) => const ClassSubjectFormScreen(),
+                ),
+                GoRoute(
+                  path: ':id/edit',
+                  builder: (context, state) {
+                    final id = state.pathParameters['id']!;
+                    return ClassSubjectFormScreen(id: id);
+                  },
+                ),
+              ],
+            ),
+           
+           // Timetable
+           GoRoute(
+             path: 'timetable',
+             builder: (context, state) => const TimetableScreen(),
+           ),
+           
+           
+           // Attendance & Holidays
+           GoRoute(path: 'attendance', builder: (context, state) => const AttendanceDashboardScreen()),
+           GoRoute(
+             path: 'holidays',
+             builder: (context, state) => const HolidayListScreen(),
+             routes: [
+               GoRoute(
+                 path: 'create',
+                 builder: (context, state) => const HolidayFormScreen(),
+               ),
+               GoRoute(
+                 path: ':id/edit',
+                 builder: (context, state) {
+                   final id = state.pathParameters['id']!;
+                   return HolidayFormScreen(id: id);
+                 },
+               ),
+             ],
+           ),
+           
+           // Curriculum
+           GoRoute(
+        path: 'syllabus',
+        builder: (context, state) => const SyllabusListScreen(),
+        routes: [
+          GoRoute(
+            path: 'add',
+            builder: (context, state) => const SyllabusFormScreen(),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: 'study-materials',
+        builder: (context, state) => const StudyMaterialListScreen(),
+        routes: [
+          GoRoute(
+            path: 'add',
+            builder: (context, state) => const StudyMaterialFormScreen(),
+          ),
+        ],
+      ),     // Others
+           GoRoute(
+             path: 'houses',
+             builder: (context, state) => const HouseListScreen(),
+             routes: [
+               GoRoute(
+                 path: 'add',
+                 builder: (context, state) => const HouseFormScreen(),
+               ),
+             ],
+           ),
+           GoRoute(
+             path: 'grading',
+             builder: (context, state) => const GradingSystemListScreen(),
+             routes: [
+               GoRoute(
+                 path: 'add',
+                 builder: (context, state) => const GradingSystemFormScreen(),
+               ),
+               GoRoute(
+                 path: ':id/grades',
+                 builder: (context, state) {
+                   final id = state.pathParameters['id']!;
+                   final name = state.extra as String? ?? 'Grading System'; // Get name from extra
+                   return GradeListScreen(gradingSystemId: id, gradingSystemName: name);
+                 },
+               ),
+             ],
+           ),
         ],
       ),
       GoRoute(

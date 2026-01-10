@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/config/constants.dart';
+import '../../../core/utils/form_validators.dart';
+import '../../academics/data/academics_repository.dart';
 import '../data/student_repository.dart';
 import '../domain/student.dart';
 import '../domain/guardian.dart';
@@ -17,6 +19,8 @@ import 'forms/transport_form.dart';
 import 'forms/hostel_form.dart';
 import '../domain/student_transport.dart';
 import '../domain/student_hostel.dart';
+import 'package:file_picker/file_picker.dart';
+import 'forms/documents_form.dart';
 
 class StudentFormScreen extends ConsumerStatefulWidget {
   final Student? student; 
@@ -74,6 +78,10 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
   StudentIdentification? _identification;
   StudentTransport? _transport;
   StudentHostel? _hostel;
+  
+  // Documents
+  Map<String, PlatformFile?> _selectedDocuments = {};
+  Map<String, String?> _existingDocumentUrls = {};
 
   bool _isLoading = false;
 
@@ -127,6 +135,15 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
        if (_addresses.isEmpty) {
          _addresses.add(StudentAddress(student: '', addressLine1: '', city: '', state: '', pincode: '', isCurrent: true));
        }
+    }
+    
+    // Initialize existing documents
+    if (s?.documents != null) {
+      for (var doc in s!.documents!) {
+        if (doc.fileUrl != null) {
+          _existingDocumentUrls[doc.docType] = doc.fileUrl;
+        }
+      }
     }
   }
 
@@ -248,6 +265,31 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
         studentId = await repo.createStudent(studentData);
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Student created successfully')));
       }
+
+      // 2. Upload Documents
+      if (_selectedDocuments.isNotEmpty) {
+        int uploadedCount = 0;
+        for (var entry in _selectedDocuments.entries) {
+          if (entry.value != null) {
+            try {
+              await repo.uploadDocument(
+                studentId: studentId,
+                docType: entry.key,
+                fileName: entry.value!.name,
+                fileBytes: entry.value!.bytes, // Web
+                filePath: entry.value!.path, // Mobile/Desktop
+              );
+              uploadedCount++;
+            } catch (e) {
+              print('Failed to upload document ${entry.key}: $e');
+              if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to upload ${entry.key}: $e')));
+            }
+          }
+        }
+        if (uploadedCount > 0 && mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$uploadedCount documents uploaded successfully')));
+        }
+      }
       
       if (mounted) {
         if (widget.student != null && widget.student!.id != null) {
@@ -271,7 +313,7 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
     final isEditing = widget.student != null;
     
     return DefaultTabController(
-      length: 7,
+      length: 8,
       child: Scaffold(
         appBar: AppBar(
           title: Text(isEditing ? 'Edit Student' : 'Add Student'),
@@ -285,6 +327,7 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
               Tab(text: 'Identification'),
               Tab(text: 'Transport'),
               Tab(text: 'Hostel'),
+              Tab(text: 'Documents'),
             ],
           ),
           actions: [
@@ -305,6 +348,7 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
               _buildIdentificationTab(),
               _buildTransportTab(),
               _buildHostelTab(),
+              _buildDocumentsTab(),
             ],
           ),
       ),
@@ -612,6 +656,17 @@ class _StudentFormScreenState extends ConsumerState<StudentFormScreen> {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: HostelForm(onSaved: (h) => setState(() => _hostel = h)),
+    );
+  }
+
+  Widget _buildDocumentsTab() {
+    return DocumentsForm(
+      onSaved: (files) {
+        setState(() {
+          _selectedDocuments = files;
+        });
+      },
+      existingUrls: _existingDocumentUrls,
     );
   }
 }

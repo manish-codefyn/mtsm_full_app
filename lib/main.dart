@@ -4,6 +4,8 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
 import 'core/router/app_router.dart';
 
+final rootScaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
 void main() {
   runApp(const ProviderScope(child: MyApp()));
 }
@@ -29,6 +31,7 @@ class MyApp extends ConsumerWidget {
       ),
       themeMode: themeState.mode,
       routerConfig: router,
+      scaffoldMessengerKey: rootScaffoldMessengerKey,
       debugShowCheckedModeBanner: false,
     );
   }

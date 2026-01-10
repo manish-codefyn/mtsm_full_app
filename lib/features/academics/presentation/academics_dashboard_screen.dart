@@ -13,6 +13,10 @@ class AcademicsDashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/'),
+        ),
         title: Text(
           'Academics Dashboard',
           style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
@@ -69,13 +73,33 @@ class AcademicsDashboardScreen extends ConsumerWidget {
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
-                        _buildActionCard(context, 'Classes', Icons.class_outlined, Colors.purple, () => context.push('/academics/classes')), // Stub route
+                        _buildActionCard(context, 'Academic Years', Icons.calendar_today_outlined, Colors.indigo, () => context.push('/academics/academic-years')),
                         const SizedBox(width: 16),
-                        _buildActionCard(context, 'Sections', Icons.grid_view, Colors.orange, () => context.push('/academics/sections')), // Stub route
+                        _buildActionCard(context, 'Terms', Icons.calendar_view_week, Colors.blueGrey, () => context.push('/academics/terms')),
                         const SizedBox(width: 16),
-                        _buildActionCard(context, 'Subjects', Icons.book_outlined, Colors.blue, () => context.push('/academics/subjects')), // Stub route
+                        _buildActionCard(context, 'Streams', Icons.account_tree, Colors.lightBlue, () => context.push('/academics/streams')),
                         const SizedBox(width: 16),
-                        _buildActionCard(context, 'Timetable', Icons.calendar_today, Colors.teal, () => context.push('/academics/timetable')), // Stub route
+                        _buildActionCard(context, 'Classes', Icons.class_outlined, Colors.purple, () => context.push('/academics/classes')),
+                        const SizedBox(width: 16),
+                        _buildActionCard(context, 'Sections', Icons.grid_view, Colors.orange, () => context.push('/academics/sections')),
+                        const SizedBox(width: 16),
+                        _buildActionCard(context, 'Subjects', Icons.book_outlined, Colors.blue, () => context.push('/academics/subjects')),
+                        const SizedBox(width: 16),
+                        _buildActionCard(context, 'Class Subjects', Icons.subject, Colors.cyan, () => context.push('/academics/class-subjects')),
+                        const SizedBox(width: 16),
+                        _buildActionCard(context, 'Timetable', Icons.schedule, Colors.teal, () => context.push('/academics/timetable')),
+                        const SizedBox(width: 16),
+                        _buildActionCard(context, 'Attendance', Icons.check_circle_outline, Colors.green, () => context.push('/attendance')),
+                        const SizedBox(width: 16),
+                        _buildActionCard(context, 'Holidays', Icons.beach_access, Colors.pink, () => context.push('/academics/holidays')),
+                         const SizedBox(width: 16),
+                        _buildActionCard(context, 'Syllabus', Icons.list_alt, Colors.deepPurple, () => context.push('/academics/syllabus')),
+                        const SizedBox(width: 16),
+                        _buildActionCard(context, 'Study Materials', Icons.library_books, Colors.brown, () => context.push('/academics/study-materials')),
+                        const SizedBox(width: 16),
+                        _buildActionCard(context, 'Houses', Icons.house, Colors.red, () => context.push('/academics/houses')),
+                         const SizedBox(width: 16),
+                        _buildActionCard(context, 'Grading', Icons.grade, Colors.amber, () => context.push('/academics/grading')),
                       ],
                     ),
                   ),

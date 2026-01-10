@@ -1,7 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/constants.dart';
+import '../router/app_router.dart'; // Import router provider
+import '../../main.dart'; // Import rootScaffoldMessengerKey
 
 final apiClientProvider = Provider((ref) => ApiClient(ref));
 
@@ -34,14 +37,45 @@ class ApiClient {
         print('Request URL: ${options.baseUrl}${options.path}');
         return handler.next(options);
       },
+      onError: (DioException e, handler) async {
+        if (e.response?.statusCode == 401) {
+           print('ApiClient: 401 Unauthorized Intercepted. Redirecting to login.');
+           
+           // Show user feedback
+           rootScaffoldMessengerKey.currentState?.showSnackBar(
+             const SnackBar(
+               content: Text('Session Expired. Please login again.'),
+               backgroundColor: Colors.red,
+             ),
+           );
+
+           // Clear token
+           await _storage.delete(key: AppConstants.tokenKey);
+           // Redirect using router provider
+           // Note: We use ref.read because we are inside a callback, mimicking a read.
+           // However, accessing providers inside callbacks requires care. 
+           // For now, simpler is better: assuming router is alive.
+           try {
+             _ref.read(routerProvider).go('/login');
+           } catch (err) {
+             print('ApiClient: Navigation failed: $err');
+           }
+        }
+        return handler.next(e);
+      },
     ));
 
     // Initialize base URL from storage
     _initBaseUrl();
   }
 
+  bool _isManuallyConfigured = false;
+
   void _initBaseUrl() async {
     final url = await _storage.read(key: AppConstants.tenantUrlKey);
+    // If URL was manually set while we were reading, abort restoration
+    if (_isManuallyConfigured) return;
+    
     if (url != null) {
       // Ensure URL ends with / but doesn't include /api/v1/
       String baseUrl = url.endsWith('/') ? url : '$url/';
@@ -51,6 +85,7 @@ class ApiClient {
   }
 
   void setBaseUrl(String url) {
+    _isManuallyConfigured = true;
     // Ensure URL ends with / but doesn't include /api/v1/
     String baseUrl = url.endsWith('/') ? url : '$url/';
     _dio.options.baseUrl = baseUrl;
