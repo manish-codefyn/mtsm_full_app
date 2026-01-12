@@ -103,11 +103,15 @@ class Student {
   final List<StudentAcademicHistory>? academicHistory;
   final List<StudentDocument>? documents;
 
+  // Image
+  final String? photo;
+
   Student({
     this.id,
     required this.firstName,
     this.middleName,
     required this.lastName,
+    this.photo, // Add to constructor
     this.admissionNumber,
     this.rollNumber,
     this.regNo,
@@ -153,6 +157,33 @@ class Student {
 
   @JsonKey(name: 'onboarding_summary')
   final Map<String, dynamic>? onboardingSummary;
+
+  // Convenience Getters
+  String? get fatherName => guardians?.firstWhere(
+    (g) => g.relation.toLowerCase() == 'father', 
+    orElse: () => Guardian(fullName: '', relation: '', phonePrimary: '', student: '')
+  ).fullName;
+  
+  String? get motherName => guardians?.firstWhere(
+    (g) => g.relation.toLowerCase() == 'mother', 
+    orElse: () => Guardian(fullName: '', relation: '', phonePrimary: '', student: '')
+  ).fullName;
+  
+  String? get currentAddress {
+    final addr = addresses?.firstWhere(
+      (a) => a.addressType.toLowerCase() == 'current', 
+      orElse: () => StudentAddress(addressLine1: '', student: '', city: '', state: '', pincode: '')
+    );
+    return addr?.addressLine1 == '' ? null : "${addr?.addressLine1}, ${addr?.city}";
+  }
+  
+  String? get permanentAddress {
+     final addr = addresses?.firstWhere(
+       (a) => a.addressType.toLowerCase() == 'permanent', 
+       orElse: () => StudentAddress(addressLine1: '', student: '', city: '', state: '', pincode: '')
+     );
+    return addr?.addressLine1 == '' ? null : "${addr?.addressLine1}, ${addr?.city}";
+  }
 
   factory Student.fromJson(Map<String, dynamic> json) => _$StudentFromJson(json);
   Map<String, dynamic> toJson() => _$StudentToJson(this);

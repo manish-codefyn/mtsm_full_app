@@ -21,6 +21,10 @@ final studentPaginationProvider = FutureProvider.family.autoDispose<PaginatedRes
     page: params.page,
     pageSize: params.pageSize,
     search: params.search,
+    classId: params.classId,
+    sectionId: params.sectionId,
+    academicYearId: params.academicYearId,
+    hasOutstandingFees: params.hasOutstandingFees,
   );
 });
 
@@ -28,8 +32,20 @@ class StudentPaginationParams {
   final int page;
   final int pageSize;
   final String? search;
+  final String? classId;
+  final String? sectionId;
+  final String? academicYearId;
+  final bool? hasOutstandingFees;
 
-  const StudentPaginationParams({this.page = 1, this.pageSize = 10, this.search});
+  const StudentPaginationParams({
+    this.page = 1, 
+    this.pageSize = 10, 
+    this.search,
+    this.classId,
+    this.sectionId,
+    this.academicYearId,
+    this.hasOutstandingFees,
+  });
 
   @override
   bool operator ==(Object other) =>
@@ -38,10 +54,21 @@ class StudentPaginationParams {
           runtimeType == other.runtimeType &&
           page == other.page &&
           pageSize == other.pageSize &&
-          search == other.search;
+          search == other.search &&
+          classId == other.classId &&
+          sectionId == other.sectionId &&
+          academicYearId == other.academicYearId &&
+          hasOutstandingFees == other.hasOutstandingFees;
 
   @override
-  int get hashCode => page.hashCode ^ pageSize.hashCode ^ search.hashCode;
+  int get hashCode => 
+      page.hashCode ^ 
+      pageSize.hashCode ^ 
+      search.hashCode ^
+      classId.hashCode ^
+      sectionId.hashCode ^
+      academicYearId.hashCode ^
+      hasOutstandingFees.hashCode;
 }
 
 class StudentRepository {
@@ -49,26 +76,51 @@ class StudentRepository {
 
   StudentRepository(this._ref);
 
-  Future<List<Student>> getStudents() async {
+  Future<List<Student>> getStudents({
+    String? search,
+    String? classId,
+    String? sectionId,
+    String? academicYearId,
+    bool? hasOutstandingFees,
+  }) async {
     final dio = _ref.read(apiClientProvider).client;
     try {
-      final response = await dio.get('students/');
+      final Map<String, dynamic> queryParams = {
+        'page_size': 1000, // Fetch all (limit to 1000 for safety)
+      };
+      if (search != null && search.isNotEmpty) queryParams['search'] = search;
+      if (classId != null) queryParams['current_class'] = classId;
+      if (sectionId != null) queryParams['section'] = sectionId;
+      if (academicYearId != null) queryParams['academic_year'] = academicYearId;
+      if (hasOutstandingFees != null) queryParams['has_outstanding_fees'] = hasOutstandingFees.toString();
+
+      final response = await dio.get('students/', queryParameters: queryParams);
       return _parseStudentList(response.data);
     } catch (e) {
       rethrow;
     }
   }
 
-  Future<PaginatedResponse<Student>> getStudentsPaginated({int page = 1, int pageSize = 10, String? search}) async {
+  Future<PaginatedResponse<Student>> getStudentsPaginated({
+    int page = 1, 
+    int pageSize = 10, 
+    String? search,
+    String? classId,
+    String? sectionId,
+    String? academicYearId,
+    bool? hasOutstandingFees,
+  }) async {
     final dio = _ref.read(apiClientProvider).client;
     try {
       final Map<String, dynamic> queryParams = {
         'page': page,
         'page_size': pageSize,
       };
-      if (search != null && search.isNotEmpty) {
-        queryParams['search'] = search;
-      }
+      if (search != null && search.isNotEmpty) queryParams['search'] = search;
+      if (classId != null) queryParams['current_class'] = classId;
+      if (sectionId != null) queryParams['section'] = sectionId;
+      if (academicYearId != null) queryParams['academic_year'] = academicYearId;
+      if (hasOutstandingFees != null) queryParams['has_outstanding_fees'] = hasOutstandingFees.toString();
       
       final response = await dio.get('students/', queryParameters: queryParams);
       return PaginatedResponse<Student>.fromJson(response.data, (json) => Student.fromJson(json));

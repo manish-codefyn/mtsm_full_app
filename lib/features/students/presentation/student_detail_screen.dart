@@ -11,6 +11,7 @@ import '../../../core/services/export_service.dart';
 import 'student_medical_form_screen.dart';
 import 'student_identification_form_screen.dart';
 import 'student_wrapper_form_screen.dart';
+import '../../attendance/presentation/providers/attendance_provider.dart';
 
 
 class StudentDetailScreen extends ConsumerStatefulWidget {
@@ -68,7 +69,7 @@ class _StudentDetailScreenState extends ConsumerState<StudentDetailScreen> with 
           controller: _tabController,
           children: [
             _buildOverviewTab(),
-            _buildPlaceholderTab('Attendance Records', Icons.calendar_today_rounded),
+            _buildAttendanceTab(),
             _buildPlaceholderTab('Exam Results', Icons.grade_rounded),
             _buildPlaceholderTab('Fee History', Icons.monetization_on_rounded),
           ],
@@ -114,10 +115,18 @@ class _StudentDetailScreenState extends ConsumerState<StudentDetailScreen> with 
                 child: CircleAvatar(
                   radius: 50,
                   backgroundColor: Colors.white,
-                  child: Text(
-                    widget.student.firstName.isNotEmpty ? widget.student.firstName[0] : '?',
-                    style: TextStyle(fontSize: 40, color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold),
-                  ),
+                  backgroundImage: widget.student.photo != null 
+                      ? NetworkImage(_resolveImageUrl(widget.student.photo!)) 
+                      : null,
+                  onBackgroundImageError: (_, __) {
+                    print("Error loading image for student: ${widget.student.photo}");
+                  },
+                  child: (widget.student.photo == null || widget.student.firstName.isEmpty) 
+                      ? Text(
+                          widget.student.firstName.isNotEmpty ? widget.student.firstName[0] : '?',
+                          style: TextStyle(fontSize: 40, color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold),
+                        )
+                      : null,
                 ),
               ),
             ),
@@ -126,8 +135,17 @@ class _StudentDetailScreenState extends ConsumerState<StudentDetailScreen> with 
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.share, color: Colors.white),
-          onPressed: () {}, 
+          icon: const Icon(Icons.edit, color: Colors.white),
+          tooltip: 'Edit Student',
+          onPressed: () {
+             Navigator.push(
+               context, 
+               MaterialPageRoute(builder: (_) => StudentWrapperFormScreen(student: widget.student))
+             ).then((_) {
+                // Ideally refresh provider here
+                setState(() {});
+             });
+          }, 
         ),
       ],
     );
@@ -159,9 +177,79 @@ class _StudentDetailScreenState extends ConsumerState<StudentDetailScreen> with 
              _InfoItem('Academic Year', '2025-2026', Icons.calendar_today), 
              _InfoItem('Status', 'Active', Icons.check_circle, color: Colors.green),
            ]),
+           const SizedBox(height: 20),
+           _buildSectionTitle('Parent Information'),
+           _buildInfoCard([
+             _InfoItem('Father Name', widget.student.fatherName ?? 'N/A', Icons.person),
+             _InfoItem('Mother Name', widget.student.motherName ?? 'N/A', Icons.person_outline),
+           ]),
+           const SizedBox(height: 20),
+           _buildSectionTitle('Address'),
+           _buildInfoCard([
+             _InfoItem('Current Address', widget.student.currentAddress ?? 'N/A', Icons.location_on),
+             _InfoItem('Permanent Address', widget.student.permanentAddress ?? 'N/A', Icons.home),
+           ]),
         ],
       ),
     );
+  }
+
+  Widget _buildAttendanceTab() {
+    return Consumer(
+      builder: (context, ref, child) {
+        final attendanceAsync = ref.watch(studentAttendanceProvider(widget.student.id!));
+        
+        return attendanceAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, stack) => Center(child: Text('Error: $err')),
+          data: (data) {
+            if (data.isEmpty) {
+              return const Center(child: Text("No attendance records found"));
+            }
+             return ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: data.length,
+              itemBuilder: (context, index) {
+                final record = data[index];
+                final status = record['status'] ?? 'PRESENT';
+                final date = record['date'] ?? 'N/A';
+                final color = status == 'PRESENT' ? Colors.green : (status == 'ABSENT' ? Colors.red : Colors.orange);
+                
+                return Card(
+                  elevation: 0,
+                  margin: const EdgeInsets.only(bottom: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: BorderSide(color: Colors.grey.shade200)
+                  ),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: color.withOpacity(0.1),
+                      child: Icon(
+                        status == 'PRESENT' ? Icons.check : (status == 'ABSENT' ? Icons.close : Icons.access_time),
+                        color: color,
+                        size: 20
+                      ),
+                    ),
+                    title: Text(DateFormat('yyyy-MM-dd').format(DateTime.parse(date)), style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(status),
+                    trailing: Text(record['remarks'] ?? '', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                  ),
+                );
+              },
+            );
+          },
+        );
+      }
+    );
+  }
+
+  String _resolveImageUrl(String path) {
+    if (path.startsWith('http')) return path;
+    final cleanPath = path.startsWith('/') ? path : '/$path';
+    final url = "http://127.0.0.1:8000$cleanPath";
+    print("Resolved Image URL: $url");
+    return url;
   }
 
   Widget _buildPlaceholderTab(String title, IconData icon) {

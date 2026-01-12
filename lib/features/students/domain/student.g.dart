@@ -11,6 +11,7 @@ Student _$StudentFromJson(Map<String, dynamic> json) => Student(
   firstName: json['first_name'] as String,
   middleName: json['middle_name'] as String?,
   lastName: json['last_name'] as String,
+  photo: json['photo'] as String?,
   admissionNumber: json['admission_number'] as String?,
   rollNumber: json['roll_number'] as String?,
   regNo: json['reg_no'] as String?,
@@ -115,5 +116,6 @@ Map<String, dynamic> _$StudentToJson(Student instance) => <String, dynamic>{
   'identification': instance.identification?.toJson(),
   'academic_history': instance.academicHistory?.map((e) => e.toJson()).toList(),
   'documents': instance.documents?.map((e) => e.toJson()).toList(),
+  'photo': instance.photo,
   'onboarding_summary': instance.onboardingSummary,
 };

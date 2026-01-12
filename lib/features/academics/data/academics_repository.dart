@@ -55,15 +55,17 @@ class AcademicsPaginationParams {
   final int page;
   final int pageSize;
   final String? search;
-  final String? classId; // Filter sections by class
+  final String? classId;
   final String? sectionId;
+  final String? academicYearId;
 
-  AcademicsPaginationParams({
-     this.page = 1,
+  const AcademicsPaginationParams({
+    this.page = 1,
     this.pageSize = 10,
     this.search,
     this.classId,
     this.sectionId,
+    this.academicYearId,
   });
 
   @override
@@ -75,16 +77,41 @@ class AcademicsPaginationParams {
           pageSize == other.pageSize &&
           search == other.search &&
           classId == other.classId &&
-          sectionId == other.sectionId;
+          sectionId == other.sectionId &&
+          academicYearId == other.academicYearId;
 
   @override
-  int get hashCode => Object.hash(page, pageSize, search, classId, sectionId);
+  int get hashCode => Object.hash(page, pageSize, search, classId, sectionId, academicYearId);
 }
+
+// ...
+
+
 
 class AcademicsRepository {
   final Ref _ref;
 
   AcademicsRepository(this._ref);
+
+  Future<PaginatedResponse<SchoolClass>> getClassesPaginated(AcademicsPaginationParams params) async {
+    final dio = _ref.read(apiClientProvider).client;
+    try {
+      final Map<String, dynamic> queryParams = {
+        'page': params.page,
+        'page_size': params.pageSize,
+      };
+      if (params.search != null && params.search!.isNotEmpty) queryParams['search'] = params.search;
+      if (params.academicYearId != null) queryParams['academic_year'] = params.academicYearId;
+
+      final response = await dio.get('/academics/classes/', queryParameters: queryParams);
+      return PaginatedResponse.fromJson(
+        response.data,
+        (json) => SchoolClass.fromJson(json as Map<String, dynamic>),
+      );
+    } catch (e) {
+      throw Exception('Failed to fetch classes: $e');
+    }
+  }
 
   // DASHBOARD
   Future<Map<String, dynamic>> getDashboardStats() async {
@@ -369,24 +396,7 @@ class AcademicsRepository {
   }
 
   // CLASSES
-  Future<PaginatedResponse<SchoolClass>> getClassesPaginated(AcademicsPaginationParams params) async {
-    final dio = _ref.read(apiClientProvider).client;
-    try {
-      final Map<String, dynamic> queryParams = {
-        'page': params.page,
-        'page_size': params.pageSize,
-      };
-      if (params.search != null && params.search!.isNotEmpty) queryParams['search'] = params.search;
 
-      final response = await dio.get('/academics/classes/', queryParameters: queryParams);
-      return PaginatedResponse.fromJson(
-        response.data,
-        (json) => SchoolClass.fromJson(json as Map<String, dynamic>),
-      );
-    } catch (e) {
-      throw Exception('Failed to fetch classes: $e');
-    }
-  }
 
   Future<SchoolClass> getClass(String id) async {
     final dio = _ref.read(apiClientProvider).client;
@@ -708,6 +718,25 @@ class AcademicsRepository {
       );
     } catch (e) {
       throw Exception('Failed to download holidays PDF: $e');
+    }
+  }
+
+  Future<void> downloadStudentAttendanceReport({required String startDate, required String endDate}) async {
+    final dio = _ref.read(apiClientProvider).client;
+    try {
+      final response = await dio.get(
+        '/academics/attendance/download/',
+        queryParameters: {'start_date': startDate, 'end_date': endDate},
+        options: Options(responseType: ResponseType.bytes),
+      );
+      
+      await Printing.sharePdf(
+        bytes: Uint8List.fromList(response.data),
+        filename: 'attendance_report_${startDate}_$endDate.pdf',
+      );
+    } catch (e) {
+       // Allow UI to handle specific errors if needed, or rethrow
+      throw Exception('Failed to download student attendance report: $e');
     }
   }
 
