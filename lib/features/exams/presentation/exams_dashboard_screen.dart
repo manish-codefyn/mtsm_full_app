@@ -157,7 +157,27 @@ class ExamsDashboardScreen extends ConsumerWidget {
                       leading: const Icon(Icons.calendar_month, color: Colors.deepPurple),
                       title: const Text('Exam Schedule'),
                       trailing: const Icon(Icons.chevron_right),
-                      onTap: () => context.push('/exams/schedule'),
+                      onTap: () => context.push('/exams/list'),
+                    ),
+                  ),
+                   Card(
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade200)),
+                    child: ListTile(
+                      leading: const Icon(Icons.description, color: Colors.deepPurple),
+                      title: const Text('Generated Exam Papers'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => context.push('/exams/papers'),
+                    ),
+                  ),
+                   Card(
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade200)),
+                    child: ListTile(
+                      leading: const Icon(Icons.library_books, color: Colors.deepPurple),
+                      title: const Text('Question Bank'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => context.push('/exams/questions'),
                     ),
                   ),
                    Card(
@@ -167,7 +187,7 @@ class ExamsDashboardScreen extends ConsumerWidget {
                       leading: const Icon(Icons.assignment_turned_in, color: Colors.deepPurple),
                       title: const Text('Results & Marks'),
                       trailing: const Icon(Icons.chevron_right),
-                      onTap: () {},
+                      onTap: () => context.push('/exams/results-landing'),
                     ),
                   ),
                    Card(
@@ -177,7 +197,7 @@ class ExamsDashboardScreen extends ConsumerWidget {
                       leading: const Icon(Icons.settings, color: Colors.deepPurple),
                       title: const Text('Exam Configuration'),
                       trailing: const Icon(Icons.chevron_right),
-                      onTap: () {},
+                      onTap: () => context.push('/exams/config'),
                     ),
                   ),
                 ],

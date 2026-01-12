@@ -509,6 +509,10 @@ class AcademicsRepository {
       throw Exception('Failed to fetch subjects: $e');
     }
   }
+  Future<PaginatedResponse<Subject>> getSubjects({int page=1, int pageSize=10}) async {
+    return getSubjectsPaginated(AcademicsPaginationParams(page: page, pageSize: pageSize));
+  }
+
 
   Future<Subject> getSubject(String id) async {
     final dio = _ref.read(apiClientProvider).client;

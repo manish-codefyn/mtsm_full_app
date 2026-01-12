@@ -26,6 +26,16 @@ import '../../features/transport/presentation/transport_dashboard_screen.dart';
 import '../../features/events/presentation/events_dashboard_screen.dart';
 import '../../features/events/presentation/event_list_screen.dart';
 import '../../features/exams/presentation/exams_dashboard_screen.dart';
+import '../../features/exams/presentation/exam_list_screen.dart';
+import '../../features/exams/presentation/exam_paper_generator.dart';
+import '../../features/exams/presentation/exam_papers_list_screen.dart';
+import '../../features/exams/presentation/exam_form_screen.dart';
+import '../../features/exams/presentation/exam_results_screen.dart';
+import '../../features/exams/presentation/exam_config_screen.dart';
+import '../../features/exams/presentation/questions/question_list_screen.dart';
+import '../../features/exams/presentation/questions/question_form_screen.dart';
+import '../../features/exams/domain/models.dart'; // For Question type in extra
+import '../../features/exams/presentation/exam_results_list_screen.dart';
 
 import '../../features/assignments/presentation/assignments_dashboard_screen.dart';
 import '../../features/students/presentation/student_dashboard_screen.dart';
@@ -435,10 +445,70 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const ExamsDashboardScreen(),
             routes: [
                GoRoute(
-                 path: 'schedule',
-                 builder: (context, state) => const Scaffold(body: Center(child: Text("Exam Schedule List - TODO"))), 
-               )
-            ]
+                 path: 'list',
+                 parentNavigatorKey: rootNavigatorKey,
+                 builder: (context, state) => const ExamListScreen(),
+               ),
+               GoRoute(
+                 path: 'paper_generator',
+                 parentNavigatorKey: rootNavigatorKey,
+                 builder: (context, state) => const ExamPaperGeneratorScreen(),
+               ),
+               GoRoute(
+                 path: 'papers',
+                 parentNavigatorKey: rootNavigatorKey,
+                 builder: (context, state) => const ExamPaperListScreen(),
+               ),
+               GoRoute(
+                 path: 'create',
+                 parentNavigatorKey: rootNavigatorKey,
+                 builder: (context, state) => const ExamFormScreen(),
+               ),
+               GoRoute(
+                 path: 'edit/:id',
+                 parentNavigatorKey: rootNavigatorKey,
+                 builder: (context, state) => ExamFormScreen(id: state.pathParameters['id']),
+               ),
+
+
+               GoRoute(
+                 path: 'results-landing', // Distinct path for results list
+                 parentNavigatorKey: rootNavigatorKey,
+                 builder: (context, state) => const ExamResultsListScreen(),
+               ),
+               
+               GoRoute(
+                 path: 'results/:id',
+                 parentNavigatorKey: rootNavigatorKey,
+                 builder: (context, state) => ExamResultsScreen(examId: state.pathParameters['id']!),
+               ),
+               GoRoute(
+                 path: 'config',
+                 parentNavigatorKey: rootNavigatorKey,
+                 builder: (context, state) => const ExamConfigScreen(),
+               ),
+               // Question Bank
+               GoRoute(
+                 path: 'questions',
+                 parentNavigatorKey: rootNavigatorKey,
+                 builder: (context, state) => const QuestionListScreen(),
+                 routes: [
+                   GoRoute(
+                     path: 'create',
+                     parentNavigatorKey: rootNavigatorKey,
+                     builder: (context, state) => const QuestionFormScreen(),
+                   ),
+                   GoRoute(
+                     path: 'edit/:id',
+                     parentNavigatorKey: rootNavigatorKey,
+                     builder: (context, state) {
+                       final q = state.extra as Question?;
+                       return QuestionFormScreen(id: state.pathParameters['id'], question: q);
+                     },
+                   ),
+                 ],
+               ),
+            ],
           ),
           GoRoute(
             path: '/communications',
