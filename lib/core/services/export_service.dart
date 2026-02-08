@@ -1,272 +1,134 @@
-import 'dart:typed_data';
+import 'dart:convert';
+import 'package:csv/csv.dart';
+import 'package:excel/excel.dart';
+import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'package:csv/csv.dart';
-import 'package:flutter/material.dart';
+import 'dart:html' as html;
+
+import '../../features/students/domain/student.dart';
 
 class ExportService {
-  
-  // Generate and Preview/Print Modern PDF
-  static Future<void> exportToPdf(
-    BuildContext context, 
-    String title, 
-    List<String> headers, 
-    List<List<dynamic>> data
-  ) async {
-    final pdf = pw.Document();
-    final theme = pw.ThemeData.withFont(
-      base: await PdfGoogleFonts.openSansRegular(),
-      bold: await PdfGoogleFonts.openSansBold(),
-      icons: await PdfGoogleFonts.materialIcons(),
-    );
+  static Future<void> exportToExcel(BuildContext context, String fileName, List<String> headers, List<List<dynamic>> data) async {
+    final excel = Excel.createExcel();
+    final sheet = excel['Sheet1'];
 
-    // Primary Color (using a nice blue)
-    const baseColor = PdfColor.fromInt(0xFF2196F3);
+    // Add headers
+    sheet.appendRow(headers.map((e) => TextCellValue(e.toString())).toList());
+    
+    // Add data
+    for (var row in data) {
+      sheet.appendRow(row.map((e) => TextCellValue(e.toString())).toList());
+    }
+
+    final bytes = excel.encode();
+    if (bytes != null) {
+      _downloadFile(bytes, '$fileName.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    }
+  }
+
+  static Future<void> exportToCsv(BuildContext context, String fileName, List<String> headers, List<List<dynamic>> data) async {
+    final List<List<dynamic>> csvRows = [headers, ...data];
+    final csvData = const ListToCsvConverter().convert(csvRows);
+    final bytes = utf8.encode(csvData);
+    _downloadFile(bytes, '$fileName.csv', 'text/csv');
+  }
+
+  static Future<void> exportToPdf(BuildContext context, String fileName, List<String> headers, List<List<dynamic>> data) async {
+    final pdf = pw.Document();
 
     pdf.addPage(
       pw.MultiPage(
-        pageTheme: pw.PageTheme(
-          theme: theme,
-          pageFormat: PdfPageFormat.a4,
-          margin: const pw.EdgeInsets.all(40),
-          buildBackground: (context) => pw.FullPage(
-            ignoreMargins: true,
-            child: pw.Container(
-              decoration: pw.BoxDecoration(
-                 border: pw.Border.all(color: PdfColors.grey200, width: 10),
+        pageFormat: PdfPageFormat.a4,
+        orientation: pw.PageOrientation.landscape,
+        build: (pw.Context context) {
+          return [
+            pw.Header(level: 0, child: pw.Text(fileName, style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900))),
+            pw.SizedBox(height: 20),
+            pw.TableHelper.fromTextArray(
+              headers: headers,
+              data: data,
+              border: pw.TableBorder.all(color: PdfColors.grey300),
+              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+              headerDecoration: const pw.BoxDecoration(color: PdfColors.blue900),
+              cellAlignment: pw.Alignment.centerLeft,
+            ),
+          ];
+        },
+      ),
+    );
+
+    await Printing.sharePdf(bytes: await pdf.save(), filename: '$fileName.pdf');
+  }
+
+  static Future<void> exportProfileToPdf(BuildContext context, Student student) async {
+    final pdf = pw.Document();
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Header(
+                level: 0,
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text('Student Profile', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+                    pw.Text('MTSM ERP', style: pw.TextStyle(fontSize: 18, color: PdfColors.grey)),
+                  ],
+                ),
               ),
-            ),
-          ),
-        ),
-        header: (context) => _buildHeader(context, title, baseColor),
-        footer: (context) => _buildFooter(context, baseColor),
-        build: (pw.Context context) {
-          return [
-             pw.SizedBox(height: 20),
-             pw.TableHelper.fromTextArray(
-                headers: headers,
-                data: data,
-                border: null,
-                headerStyle: pw.TextStyle(
-                  color: PdfColors.white,
-                  fontWeight: pw.FontWeight.bold,
-                ),
-                headerDecoration: const pw.BoxDecoration(
-                  color: baseColor,
-                ),
-                rowDecoration: const pw.BoxDecoration(
-                  border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey100, width: 0.5)),
-                ),
-                cellAlignment: pw.Alignment.centerLeft,
-                cellAlignments: {
-                  0: pw.Alignment.centerLeft,
-                },
-                cellStyle: const pw.TextStyle(fontSize: 10),
-                cellPadding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                oddRowDecoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xFFF5F5F5)),
-             ),
-          ];
+              pw.SizedBox(height: 20),
+              pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('Name: ${student.firstName} ${student.lastName}', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+                      pw.Text('Admission No: ${student.admissionNumber ?? "N/A"}'),
+                      pw.Text('Roll No: ${student.rollNumber ?? "N/A"}'),
+                      pw.Text('Gender: ${student.gender ?? "N/A"}'),
+                      pw.Text('DOB: ${student.dateOfBirth ?? "N/A"}'),
+                    ],
+                  ),
+                ],
+              ),
+              pw.SizedBox(height: 20),
+              pw.Divider(),
+              pw.SizedBox(height: 10),
+              pw.Text('Contact Information', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+              pw.Text('Email: ${student.email ?? "N/A"}'),
+              pw.Text('Mobile: ${student.mobilePrimary ?? "N/A"}'),
+              pw.SizedBox(height: 20),
+              pw.Text('Parent Information', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+              pw.Text('Father: ${student.fatherName ?? "N/A"}'),
+              pw.Text('Mother: ${student.motherName ?? "N/A"}'),
+              pw.SizedBox(height: 20),
+              pw.Text('Academic Information', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+              pw.Text('Class: ${student.currentClassName ?? "N/A"}'),
+              pw.Text('Section: ${student.section ?? "N/A"}'),
+              pw.Text('Stream: ${student.stream ?? "N/A"}'),
+            ],
+          );
         },
       ),
     );
 
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: '${title.replaceAll(' ', '_')}.pdf',
-    );
+    await Printing.sharePdf(bytes: await pdf.save(), filename: 'student_profile_${student.admissionNumber ?? student.firstName}.pdf');
   }
 
-  static pw.Widget _buildHeader(pw.Context context, String title, PdfColor baseColor) {
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Row(
-          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-          children: [
-            pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Text('DPS Kolkata', style: pw.TextStyle(color: baseColor, fontSize: 18, fontWeight: pw.FontWeight.bold)),
-                pw.Text('School Management System', style: const pw.TextStyle(color: PdfColors.grey600, fontSize: 10)),
-              ],
-            ),
-            pw.Column(
-               crossAxisAlignment: pw.CrossAxisAlignment.end,
-               children: [
-                 pw.Text('Report', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold, color: PdfColors.black)),
-                 pw.Text(
-                   title,
-                   style: const pw.TextStyle(fontSize: 14, color: PdfColors.grey700),
-                 ),
-               ]
-            )
-          ],
-        ),
-        pw.SizedBox(height: 10),
-        pw.Divider(color: baseColor, thickness: 2),
-        pw.SizedBox(height: 10),
-        pw.Row(
-          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-          children: [
-            pw.Text('Generated On: ${DateTime.now().toString().split('.')[0]}', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
-            pw.Text('Academic Year: 2024-2025', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
-          ]
-        ),
-        pw.SizedBox(height: 20),
-      ],
-    );
-  }
-
-  static pw.Widget _buildFooter(pw.Context context, PdfColor baseColor) {
-    return pw.Column(
-      children: [
-        pw.Divider(color: PdfColors.grey300),
-        pw.SizedBox(height: 10),
-        pw.Row(
-          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-          children: [
-             pw.Text('Generated by Admin', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey500)),
-             pw.Text(
-              'Page ${context.pageNumber} of ${context.pagesCount}',
-              style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey500),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-
-  // Generate and Print Student Profile PDF
-  static Future<void> exportProfileToPdf(BuildContext context, dynamic student) async {
-    // Note: student is dynamic to avoid direct dependency, or import Student model
-    final pdf = pw.Document();
-    final theme = pw.ThemeData.withFont(
-      base: await PdfGoogleFonts.openSansRegular(),
-      bold: await PdfGoogleFonts.openSansBold(),
-      icons: await PdfGoogleFonts.materialIcons(),
-    );
-     const baseColor = PdfColor.fromInt(0xFF2196F3);
-
-    pdf.addPage(
-      pw.MultiPage(
-        pageTheme: pw.PageTheme(
-          theme: theme,
-          pageFormat: PdfPageFormat.a4,
-          margin: const pw.EdgeInsets.all(40),
-        ),
-         header: (context) => _buildHeader(context, 'Student Profile', baseColor),
-         footer: (context) => _buildFooter(context, baseColor),
-        build: (pw.Context context) {
-          return [
-             pw.Container(
-               padding: const pw.EdgeInsets.all(20),
-               decoration: pw.BoxDecoration(
-                 color: PdfColors.grey50,
-                 border: pw.Border.all(color: PdfColors.grey200),
-                 borderRadius: pw.BorderRadius.circular(10),
-               ),
-               child: pw.Row(
-                 crossAxisAlignment: pw.CrossAxisAlignment.start,
-                 children: [
-                    pw.Container(
-                      width: 80,
-                      height: 80,
-                      decoration: const pw.BoxDecoration(
-                        color: PdfColors.grey300,
-                        shape: pw.BoxShape.circle,
-                      ),
-                      child: pw.Center(
-                        child: pw.Text(
-                           (student.firstName as String).isNotEmpty ? (student.firstName as String)[0] : '?',
-                           style: pw.TextStyle(fontSize: 40, color: PdfColors.white, fontWeight: pw.FontWeight.bold),
-                        )
-                      )
-                    ),
-                    pw.SizedBox(width: 20),
-                    pw.Expanded(
-                      child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        children: [
-                          pw.Text('${student.firstName} ${student.lastName}', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold, color: baseColor)),
-                          pw.SizedBox(height: 5),
-                          pw.Text('Admission #: ${student.admissionNumber ?? "N/A"}', style: const pw.TextStyle(color: PdfColors.grey700)),
-                          pw.Text('Class: ${student.currentClassName ?? "N/A"}', style: const pw.TextStyle(color: PdfColors.grey700)),
-                          pw.Text('Email: ${student.email ?? "N/A"}', style: const pw.TextStyle(color: PdfColors.grey700)),
-                        ],
-                      )
-                    )
-                 ]
-               )
-             ),
-             pw.SizedBox(height: 20),
-             
-             // Sections
-             _buildPdfSection('Personal Information', [
-               ['Gender', student.gender ?? '-'],
-               ['Date of Birth', student.dateOfBirth ?? '-'],
-               ['Mobile', student.mobilePrimary ?? '-'],
-               ['Nationality', student.nationality ?? '-'],
-             ]),
-             
-             _buildPdfSection('Parent / Guardian', [
-                // Simplified, assumes first guardian if exists
-                if (student.guardians != null && (student.guardians as List).isNotEmpty) ...[
-                   ['Guardian Name', student.guardians[0].firstName],
-                   ['Relationship', student.guardians[0].relationship],
-                   ['Mobile', student.guardians[0].mobileNumber],
-                ] else ...[
-                   ['Status', 'No guardian linked']
-                ]
-             ]),
-            
-             _buildPdfSection('Academic Details', [
-               ['Roll Number', student.rollNumber ?? '-'],
-               ['Academic Year', student.academicYear ?? '-'],
-               ['Status', student.status ?? '-'],
-             ]),
-
-          ];
-        },
-      ),
-    );
-
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: '${student.firstName}_profile.pdf',
-    );
-  }
-
-  static pw.Widget _buildPdfSection(String title, List<List<String>> rows) {
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Text(title, style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.black)),
-        pw.Divider(color: PdfColors.grey400),
-        pw.SizedBox(height: 10),
-         pw.TableHelper.fromTextArray(
-            data: rows,
-            headerCount: 0,
-            border: null,
-            cellAlignment: pw.Alignment.centerLeft,
-            cellStyle: const pw.TextStyle(fontSize: 10),
-            cellPadding: const pw.EdgeInsets.symmetric(vertical: 4),
-            rowDecoration: const pw.BoxDecoration(
-               border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey100, width: 0.5)),
-            ),
-         ),
-         pw.SizedBox(height: 20),
-      ]
-    );
-  }
-
-  static Future<void> exportToCsv(BuildContext context, String filename, List<String> headers, List<List<dynamic>> data) async {
-    List<List<dynamic>> rows = [headers, ...data];
-    String csv = const ListToCsvConverter().convert(rows);
-    print("CSV Generated:\n$csv");
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('CSV Export Simulated (Check Console)')),
-    );
+  static void _downloadFile(List<int> bytes, String fileName, String mimeType) {
+    // Web-compatible download using dart:html
+    final blob = html.Blob([bytes], mimeType);
+    final url = html.Url.createObjectUrlFromBlob(blob);
+    final anchor = html.AnchorElement(href: url)
+      ..setAttribute('download', fileName)
+      ..click();
+    html.Url.revokeObjectUrl(url);
   }
 }
